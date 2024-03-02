@@ -1,6 +1,15 @@
 import { Account, ec, stark, RpcProvider, hash, CallData } from 'starknet';
 import { ref, reactive, watchEffect, onUnmounted, toRaw } from 'vue'
-import { defineQuery } from "@dojoengine/recs";
+import {
+  Component,
+  ComponentValue,
+  defineQuery,
+  Entity,
+  getComponentValue,
+  Has,
+  isComponentUpdate,
+  Schema
+} from "@dojoengine/recs";
 
 export enum Direction {
   Left = 1,
@@ -107,4 +116,36 @@ export function useEntityQuery(fragments: any[]) {
   })
 
   return entitiesRef
+}
+
+export function useComponentValue<S extends Schema>(
+  component: Component<S>,
+  entity: Entity | undefined,
+  defaultValue?: ComponentValue<S>
+) {
+  const value = ref(
+    entity != null ? getComponentValue(component, entity) : undefined
+  )
+
+
+  value.value = entity != null ? getComponentValue(component, entity) : undefined
+  if (entity == null) return;
+  const queryResult = defineQuery([Has(component)], { runOnInit: false });
+  const subscription = queryResult.update$.subscribe((update) => {
+    console.log(update)
+    if (
+      isComponentUpdate(update, component) &&
+      update.entity === entity
+    ) {
+      const [nextValue] = update.value;
+      value.value = nextValue
+    }
+  });
+
+
+  onUnmounted(() => {
+    subscription.unsubscribe()
+  })
+
+  return value ?? defaultValue;
 }

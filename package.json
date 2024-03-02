@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "create-components": "npx @dojoengine/core ../../dojo-starter/target/dev/manifest.json src/dojo/generated/contractComponents.ts http://localhost:5050 0x28f5999ae62fec17c09c52a800e244961dba05251f5aaf923afabd9c9804d1a"
+    "create-components": "npx @dojoengine/core ../dojo-starter/target/dev/manifest.json src/dojo/generated/contractComponents.ts http://localhost:5050 0x28f5999ae62fec17c09c52a800e244961dba05251f5aaf923afabd9c9804d1a"
   },
   "dependencies": {
     "@dojoengine/core": "0.5.9",

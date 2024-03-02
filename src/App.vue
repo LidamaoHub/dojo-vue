@@ -2,8 +2,9 @@
 import { ref, onMounted, watch, toRaw, reactive } from "vue";
 import { setup } from "./dojo/generated/setup.ts";
 import { dojoConfig } from "../dojoConfig.ts";
-import { createAccount, useEntityQuery, Direction, getAccount } from "./utils"
-import { Has, getComponentValue } from "@dojoengine/recs";
+import { createAccount, Direction, getAccount, useComponentValue } from "./utils"
+import { Entity } from "@dojoengine/recs";
+import { getEntityIdFromKeys } from "@dojoengine/utils";
 
 const dojoContext = reactive<any>({
   setup: null,
@@ -49,34 +50,22 @@ onMounted(async () => {
   const account = await getAccount(setupResult.config.rpcUrl);
   dojoContext.setup = setupResult;
   dojoContext.account = account;
-  const { Position, Moves } = setupResult.clientComponents
-  entity.value = {
-    position: useEntityQuery([Has(toRaw(Position))]),
-    moves: useEntityQuery([Has(toRaw(Moves))])
-  }
 })
 
-watch(() => entity.value, async (newEntity) => {
-  if (newEntity) {
+watch(() => dojoContext.account, (newAccount) => {
+  if (newAccount) {
+    const entityId = getEntityIdFromKeys([
+        BigInt(newAccount.address),
+    ]) as Entity;
     const { Position, Moves } = dojoContext.setup.clientComponents
-    const positionData = newEntity.position.map((e: any) => getComponentValue(toRaw(Position), e)).filter((e: any) => {
-      let addr: any = e?.player;
-      const bn = BigInt(addr);
-      const hex = bn.toString(16);
-      e.player = '0x' + hex;
-      return e.player === dojoContext?.account?.address
-    })[0]
-    const movesData = newEntity.moves.map((e: any) => getComponentValue(toRaw(Moves), e)).filter((e: any) => {
-      let addr: any = e?.player;
-      const bn = BigInt(addr);
-      const hex = bn.toString(16);
-      e.player = '0x' + hex;
-      return e.player === dojoContext?.account?.address
-    })[0]
-    position.value = positionData || position.value
-    moves.value = movesData || moves.value
+    const positionRef = useComponentValue(toRaw(Position), entityId);
+    const movesRef = useComponentValue(toRaw(Moves), entityId);
+    watch(() => [positionRef, movesRef], ([positionData, movesData]) => {
+      position.value = positionData?.value
+      moves.value = movesData?.value
+    }, {immediate: true, deep: true})
   }
-}, { deep: true })
+})
 
 
 </script>
